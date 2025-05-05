@@ -1,0 +1,52 @@
+name: math_game
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_animate: ^4.2.0
+  flutter_svg:
+  cupertino_icons: ^1.0.2
+  hive_flutter: ^1.1.0
+  just_audio: ^0.10.2
+  provider: ^6.0.5
+  hive: ^2.2.3
+  intl: ^0.18.1
+  path_provider: ^2.1.1
+  change_app_package_name: ^1.4.0
+
+
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+  build_runner: ^2.4.15
+  hive_generator:
+  flutter_native_splash: ^2.2.12
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  #adaptive_icon_background: "#4C6FFF"
+  #adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+    # - assets/fonts/
+    # - assets/images/
+    # - assets/avatars/
+    # - assets/shop/
+    # - assets/backgrounds/
+    # - assets/sounds/

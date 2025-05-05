@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo do ícone - forma arredondada -->
+  <rect width="512" height="512" rx="100" ry="100" fill="#4C6FFF"/>
+  
+  <!-- Formas decorativas de fundo -->
+  <circle cx="120" cy="90" r="50" fill="#FF6B6B" opacity="0.7"/>
+  <circle cx="400" cy="120" r="70" fill="#42E682" opacity="0.7"/>
+  <circle cx="380" cy="420" r="60" fill="#FFD747" opacity="0.7"/>
+  <circle cx="120" cy="380" r="40" fill="#9D71EA" opacity="0.7"/>
+  
+  <!-- Balão de fala contendo elementos matemáticos -->
+  <path d="M400,250 C400,350 300,420 200,420 C100,420 80,350 80,250 C80,150 150,100 250,100 C350,100 400,150 400,250 L420,320 L360,280 Z" 
+        fill="white" stroke="#333" stroke-width="8"/>
+  
+  <!-- Símbolo de adição -->
+  <rect x="140" y="180" width="20" height="80" rx="8" ry="8" fill="#FF6B6B"/>
+  <rect x="110" y="210" width="80" height="20" rx="8" ry="8" fill="#FF6B6B"/>
+  
+  <!-- Símbolo de subtração -->
+  <rect x="210" y="210" width="80" height="20" rx="8" ry="8" fill="#42E682"/>
+  
+  <!-- Símbolo de multiplicação -->
+  <g transform="translate(320, 220) rotate(45)">
+    <rect x="-40" y="-10" width="80" height="20" rx="8" ry="8" fill="#FFD747"/>
+    <rect x="-10" y="-40" width="20" height="80" rx="8" ry="8" fill="#FFD747"/>
+  </g>
+  
+  <!-- Símbolo de divisão -->
+  <rect x="210" y="290" width="80" height="20" rx="8" ry="8" fill="#9D71EA"/>
+  <circle cx="250" cy="265" r="12" fill="#9D71EA"/>
+  <circle cx="250" cy="335" r="12" fill="#9D71EA"/>
+  
+  <!-- Símbolo de igual -->
+  <rect x="110" y="290" width="60" height="15" rx="7" ry="7" fill="#4C6FFF"/>
+  <rect x="110" y="320" width="60" height="15" rx="7" ry="7" fill="#4C6FFF"/>
+  
+  <!-- Números decorativos - Estilo 3D com sombras -->
+  <g transform="translate(320, 300)">
+    <text x="0" y="0" font-family="Arial" font-size="60" font-weight="bold" fill="#333" text-anchor="middle">123</text>
+    <text x="-3" y="-3" font-family="Arial" font-size="60" font-weight="bold" fill="#4C6FFF" text-anchor="middle">123</text>
+  </g>
+  
+  <!-- Personagem mascote - carinha sorridente com chapéu acadêmico -->
+  <g transform="translate(90, 150)">
+    <!-- Chapéu acadêmico -->
+    <rect x="-25" y="-40" width="50" height="10" fill="#333"/>
+    <rect x="-20" y="-70" width="40" height="30" fill="#333"/>
+    <rect x="-30" y="-75" width="60" height="10" fill="#333"/>
+    <rect x="5" y="-65" width="5" height="25" fill="#FFD747"/>
+    
+    <!-- Rosto -->
+    <circle cx="0" cy="0" r="30" fill="#FFD747"/>
+    
+    <!-- Olhos -->
+    <circle cx="-10" cy="-5" r="5" fill="white"/>
+    <circle cx="10" cy="-5" r="5" fill="white"/>
+    <circle cx="-8" cy="-5" r="2" fill="#333"/>
+    <circle cx="12" cy="-5" r="2" fill="#333"/>
+    
+    <!-- Sorriso -->
+    <path d="M-12,10 Q0,25 12,10" stroke="#333" stroke-width="3" fill="none"/>
+  </g>
+  
+  <!-- Efeitos decorativos - estrelas -->
+  <g transform="translate(50, 50)">
+    <polygon points="0,-12 2.5,-4 11,-4 4,1.5 6.5,9 0,4 -6.5,9 -4,1.5 -11,-4 -2.5,-4" fill="#FFD747"/>
+  </g>
+  <g transform="translate(450, 60)">
+    <polygon points="0,-15 3,-5 13.5,-5 5,1.5 8,11.5 0,6 -8,11.5 -5,1.5 -13.5,-5 -3,-5" fill="#FFD747"/>
+  </g>
+  <g transform="translate(420, 350)">
+    <polygon points="0,-10 2,-3 9,-3 3.5,1 5.5,8 0,4 -5.5,8 -3.5,1 -9,-3 -2,-3" fill="#FFD747"/>
+  </g>
+  <g transform="translate(70, 400)">
+    <polygon points="0,-8 1.5,-2.5 7,-2.5 2.5,1 4,6 0,3 -4,6 -2.5,1 -7,-2.5 -1.5,-2.5" fill="#FFD747"/>
+  </g>
+</svg>

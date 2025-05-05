@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#E9F0FF" rx="20" ry="20"/>
+  
+  <!-- Header -->
+  <rect x="20" y="20" width="760" height="80" rx="15" ry="15" fill="#4C6FFF"/>
+  <text x="400" y="70" font-family="Arial" font-size="32" font-weight="bold" fill="white" text-anchor="middle">Math Fun Adventure</text>
+  
+  <!-- Game Map Background -->
+  <rect x="20" y="120" width="760" height="360" rx="15" ry="15" fill="white" stroke="#DDD" stroke-width="2"/>
+  
+  <!-- Path through islands -->
+  <path d="M100,280 C150,260 200,320 250,300 S350,260 400,290 S500,350 600,320 S700,280 750,300" 
+        stroke="#FFD747" stroke-width="20" stroke-linecap="round" fill="none" stroke-dasharray="1,0"/>
+  
+  <!-- Islands/Levels -->
+  <!-- Level 1 - Numbers Island -->
+  <circle cx="100" cy="280" r="40" fill="#42E682" stroke="#2DAD60" stroke-width="4"/>
+  <text x="100" y="285" font-family="Arial" font-size="20" font-weight="bold" fill="white" text-anchor="middle">1</text>
+  
+  <!-- Level 2 - Addition Forest -->
+  <circle cx="250" cy="300" r="40" fill="#42E682" stroke="#2DAD60" stroke-width="4"/>
+  <text x="250" y="305" font-family="Arial" font-size="20" font-weight="bold" fill="white" text-anchor="middle">2</text>
+  
+  <!-- Level 3 - Subtraction Cave -->
+  <circle cx="400" cy="290" r="40" fill="#4C6FFF" stroke="#3A59CC" stroke-width="4"/>
+  <text x="400" y="295" font-family="Arial" font-size="20" font-weight="bold" fill="white" text-anchor="middle">3</text>
+  
+  <!-- Level 4 - Multiplication Castle (Locked) -->
+  <circle cx="550" cy="320" r="40" fill="#BBC1CD" stroke="#9DA4B4" stroke-width="4"/>
+  <text x="550" y="325" font-family="Arial" font-size="20" font-weight="bold" fill="#666" text-anchor="middle">4</text>
+  <rect x="535" y="305" width="30" height="30" fill="none" stroke="#666" stroke-width="4" rx="5" ry="5"/>
+  <line x1="550" y1="310" x2="550" y2="330" stroke="#666" stroke-width="4"/>
+  <line x1="545" y1="320" x2="555" y2="320" stroke="#666" stroke-width="4"/>
+  
+  <!-- Level 5 - Division Ocean (Locked) -->
+  <circle cx="700" cy="290" r="40" fill="#BBC1CD" stroke="#9DA4B4" stroke-width="4"/>
+  <text x="700" y="295" font-family="Arial" font-size="20" font-weight="bold" fill="#666" text-anchor="middle">5</text>
+  <rect x="685" y="275" width="30" height="30" fill="none" stroke="#666" stroke-width="4" rx="5" ry="5"/>
+  <line x1="700" y1="280" x2="700" y2="300" stroke="#666" stroke-width="4"/>
+  <line x1="695" y1="290" x2="705" y2="290" stroke="#666" stroke-width="4"/>
+  
+  <!-- Player Avatar -->
+  <circle cx="400" cy="290" r="25" fill="#FFD747" stroke="#E6B800" stroke-width="4"/>
+  <circle cx="390" cy="280" r="5" fill="#333"/>
+  <circle cx="410" cy="280" r="5" fill="#333"/>
+  <path d="M385,300 Q400,310 415,300" stroke="#333" stroke-width="3" fill="none"/>
+  
+  <!-- Stars for completed levels -->
+  <g transform="translate(100, 220)">
+    <polygon points="0,-10 2,-4 9,-4 3,0 5,6 0,2 -5,6 -3,0 -9,-4 -2,-4" fill="#FFD747" stroke="#E6B800" stroke-width="1"/>
+  </g>
+  <g transform="translate(85, 220)">
+    <polygon points="0,-10 2,-4 9,-4 3,0 5,6 0,2 -5,6 -3,0 -9,-4 -2,-4" fill="#FFD747" stroke="#E6B800" stroke-width="1"/>
+  </g>
+  <g transform="translate(115, 220)">
+    <polygon points="0,-10 2,-4 9,-4 3,0 5,6 0,2 -5,6 -3,0 -9,-4 -2,-4" fill="#FFD747" stroke="#E6B800" stroke-width="1"/>
+  </g>
+  
+  <g transform="translate(250, 240)">
+    <polygon points="0,-10 2,-4 9,-4 3,0 5,6 0,2 -5,6 -3,0 -9,-4 -2,-4" fill="#FFD747" stroke="#E6B800" stroke-width="1"/>
+  </g>
+  <g transform="translate(235, 240)">
+    <polygon points="0,-10 2,-4 9,-4 3,0 5,6 0,2 -5,6 -3,0 -9,-4 -2,-4" fill="#FFD747" stroke="#E6B800" stroke-width="1"/>
+  </g>
+  <g transform="translate(265, 240)">
+    <polygon points="0,-10 2,-4 9,-4 3,0 5,6 0,2 -5,6 -3,0 -9,-4 -2,-4" fill="#FFD747" stroke="#E6B800" stroke-width="1"/>
+  </g>
+  
+  <!-- Current challenge popup -->
+  <rect x="100" y="350" width="600" height="100" rx="15" ry="15" fill="#F8F9FA" stroke="#DDD" stroke-width="2"/>
+  <text x="400" y="380" font-family="Arial" font-size="22" font-weight="bold" fill="#333" text-anchor="middle">Desafio Atual: Caverna da Subtração</text>
+  <text x="400" y="410" font-family="Arial" font-size="18" fill="#666" text-anchor="middle">Complete os desafios para avançar ao Castelo da Multiplicação!</text>
+  <rect x="300" y="430" width="200" height="40" rx="20" ry="20" fill="#FF6B6B" stroke="#CC5757" stroke-width="2"/>
+  <text x="400" y="455" font-family="Arial" font-size="18" font-weight="bold" fill="white" text-anchor="middle">JOGAR AGORA</text>
+  
+  <!-- Bottom Navigation -->
+  <rect x="20" y="500" width="760" height="80" rx="15" ry="15" fill="#F8F9FA" stroke="#DDD" stroke-width="2"/>
+  
+  <!-- Profile Button -->
+  <circle cx="120" cy="540" r="30" fill="#4C6FFF" stroke="#3A59CC" stroke-width="2"/>
+  <text x="120" y="545" font-family="Arial" font-size="12" font-weight="bold" fill="white" text-anchor="middle">PERFIL</text>
+  
+  <!-- Shop Button -->
+  <circle cx="280" cy="540" r="30" fill="#42E682" stroke="#2DAD60" stroke-width="2"/>
+  <text x="280" y="545" font-family="Arial" font-size="12" font-weight="bold" fill="white" text-anchor="middle">LOJA</text>
+  
+  <!-- Achievements Button -->
+  <circle cx="520" cy="540" r="30" fill="#FFD747" stroke="#E6B800" stroke-width="2"/>
+  <text x="520" y="545" font-family="Arial" font-size="12" font-weight="bold" fill="white" text-anchor="middle">PRÊMIOS</text>
+  
+  <!-- Settings Button -->
+  <circle cx="680" cy="540" r="30" fill="#BBC1CD" stroke="#9DA4B4" stroke-width="2"/>
+  <text x="680" y="545" font-family="Arial" font-size="12" font-weight="bold" fill="white" text-anchor="middle">CONFIG</text>
+  
+  <!-- Coins display -->
+  <circle cx="400" cy="540" r="25" fill="#FFD747" stroke="#E6B800" stroke-width="2"/>
+  <text x="400" y="545" font-family="Arial" font-size="14" font-weight="bold" fill="#333" text-anchor="middle">$</text>
+  <text x="440" y="545" font-family="Arial" font-size="18" font-weight="bold" fill="#333" text-anchor="middle">250</text>
+  
+</svg>
