@@ -380,23 +380,29 @@ class WorldAdapter extends TypeAdapter<World> {
       fields[fieldNumber] = reader.read();
     }
 
-    return World(
-        id: fields[0] as int,
-        name: fields[1] as String,
-        description: fields[2] as String,
-        iconId: fields[3] as String,
-        levels: (fields[4] as List).cast<Level>(),
-        themeColor: fields[5]! as String,
-        operation: fields[6] as String,
-      )
-      ..unlocked = fields[2] as bool
-      ..completed = fields[3] as bool
-      ..levels = (fields[4] as List).cast<Level>();
+    // Trate campos que podem estar faltando
+    final world = World(
+      id: fields[0] as int,
+      name: fields[1] as String,
+      description: fields[7] != null ? fields[7] as String : "",
+      iconId: fields[8] != null ? fields[8] as String : "default_icon",
+      themeColor: fields[9] != null ? fields[9] as String : "#4C6FFF",
+      operation: fields[10] != null ? fields[10] as String : "addition",
+      levels: fields[4] != null ? (fields[4] as List).cast<Level>() : [],
+    );
+
+    // Configure propriedades adicionais
+    world.unlocked = fields[2] as bool;
+    world.completed = fields[3] as bool;
+
+    return world;
   }
 
   @override
   void write(BinaryWriter writer, World obj) {
-    writer.writeByte(5);
+    writer.writeByte(11); // Atualize para o número total de campos
+
+    // Campos básicos primeiro
     writer.writeByte(0);
     writer.write(obj.id);
     writer.writeByte(1);
@@ -407,9 +413,20 @@ class WorldAdapter extends TypeAdapter<World> {
     writer.write(obj.completed);
     writer.writeByte(4);
     writer.write(obj.levels);
+
+    // Campos adicionais
+    writer.writeByte(7);
+    writer.write(obj.description);
+    writer.writeByte(8);
+    writer.write(obj.iconId);
+    writer.writeByte(9);
+    writer.write(obj.themeColor);
+    writer.writeByte(10);
+    writer.write(obj.operation);
   }
 }
 
+// Level Adapter
 // Level Adapter
 class LevelAdapter extends TypeAdapter<Level> {
   @override
@@ -428,10 +445,12 @@ class LevelAdapter extends TypeAdapter<Level> {
     return Level(
         id: fields[0] as int,
         name: fields[1] as String,
-        difficulty: fields[7] as int, // Ensure the field is cast to int
+        // Use um valor padrão ou operador de coalescência nula (??)
+        difficulty: fields[7] != null ? fields[7] as int : 1, // Valor padrão 1
         challengeType:
-            fields[8]
-                as String, // Replace with the correct field index for 'challengeType'
+            fields[8] != null
+                ? fields[8] as String
+                : 'normal', // Valor padrão 'normal'
       )
       ..stars = fields[2] as int
       ..completed = fields[3] as bool
@@ -442,7 +461,7 @@ class LevelAdapter extends TypeAdapter<Level> {
 
   @override
   void write(BinaryWriter writer, Level obj) {
-    writer.writeByte(7);
+    writer.writeByte(9); // Atualize para incluir todos os campos
     writer.writeByte(0);
     writer.write(obj.id);
     writer.writeByte(1);
@@ -457,6 +476,10 @@ class LevelAdapter extends TypeAdapter<Level> {
     writer.write(obj.highScore);
     writer.writeByte(6);
     writer.write(obj.bestTime);
+    writer.writeByte(7);
+    writer.write(obj.difficulty);
+    writer.writeByte(8);
+    writer.write(obj.challengeType);
   }
 }
 

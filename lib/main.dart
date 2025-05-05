@@ -95,7 +95,8 @@ class _AppStartupControllerState extends State<AppStartupController> {
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    // Use Future.microtask para agendar a inicialização após a construção do widget
+    Future.microtask(_initializeApp);
   }
 
   // Inicializa os dados do jogador e decide para qual tela navegar
@@ -103,9 +104,12 @@ class _AppStartupControllerState extends State<AppStartupController> {
     final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
     await playerProvider.initialize();
 
-    setState(() {
-      _isInitialized = true;
-    });
+    // Só atualize o estado se o widget ainda estiver montado
+    if (mounted) {
+      setState(() {
+        _isInitialized = true;
+      });
+    }
   }
 
   @override
