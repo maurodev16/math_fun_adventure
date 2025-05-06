@@ -1,9 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:hive/hive.dart';
 import 'dart:math';
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+
+// Define the enum directly in this file
+enum ProblemType { sequence, operation }
+
+// Define the adapter directly in this file
+class _ProblemTypeAdapter extends TypeAdapter<ProblemType> {
+  @override
+  final int typeId = 64;
+
+  @override
+  ProblemType read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return ProblemType.sequence;
+      case 1:
+        return ProblemType.operation;
+      default:
+        return ProblemType.sequence;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, ProblemType obj) {
+    switch (obj) {
+      case ProblemType.sequence:
+        writer.writeByte(0);
+        break;
+      case ProblemType.operation:
+        writer.writeByte(1);
+        break;
+    }
+  }
+}
 
 class DragDropNumbersChallenge extends StatefulWidget {
   final int level;
@@ -62,7 +96,10 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
   @override
   void initState() {
     super.initState();
-
+    // Register the ProblemType adapter directly to fix the error
+    if (!Hive.isAdapterRegistered(64)) {
+      Hive.registerAdapter(_ProblemTypeAdapter());
+    }
     // Initialize audio players
     _musicPlayer = AudioPlayer();
     _effectsPlayer = AudioPlayer();
@@ -157,11 +194,21 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
     }
   }
 
+  // 3. Fix the sound effect methods to ensure they release resources properly
   Future<void> _playDragSound() async {
     try {
-      await _effectsPlayer.setAsset('assets/sounds/drag.mp3');
-      await _effectsPlayer.setVolume(0.5);
-      await _effectsPlayer.play();
+      // Create a new instance each time to avoid issues with replaying
+      final player = AudioPlayer();
+      await player.setAsset('assets/sounds/drag.mp3');
+      await player.setVolume(0.5);
+      await player.play();
+
+      // Dispose after playing to free resources
+      player.processingStateStream.listen((state) {
+        if (state == ProcessingState.completed) {
+          player.dispose();
+        }
+      });
     } catch (e) {
       debugPrint('Error playing drag sound: $e');
     }
@@ -169,9 +216,18 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
 
   Future<void> _playDropSound() async {
     try {
-      await _effectsPlayer.setAsset('assets/sounds/drop.mp3');
-      await _effectsPlayer.setVolume(0.5);
-      await _effectsPlayer.play();
+      // Create a new instance each time to avoid issues with replaying
+      final player = AudioPlayer();
+      await player.setAsset('assets/sounds/drop.mp3');
+      await player.setVolume(0.5);
+      await player.play();
+
+      // Dispose after playing to free resources
+      player.processingStateStream.listen((state) {
+        if (state == ProcessingState.completed) {
+          player.dispose();
+        }
+      });
     } catch (e) {
       debugPrint('Error playing drop sound: $e');
     }
@@ -239,6 +295,7 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
     }
   }
 
+  // 2. Fix the _setupProblem method for sequence type problems
   void _setupProblem() {
     if (_currentProblemIndex >= _problems.length) {
       _endGame();
@@ -266,46 +323,80 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
       }
 
       // Prepare target slots
-      for (int i = 0; i < problem.targetValues.length; i++) {
-        final isTargetSlot = problem.targetValues[i] == '?';
-        _targetSlots.add(
-          TargetSlot(
-            id: i,
-            correctValue: isTargetSlot ? '' : problem.targetValues[i],
-            isTargetSlot: isTargetSlot,
-            currentItem: null,
-          ),
-        );
+      if (problem.type == ProblemType.sequence) {
+        // For sequence problems, all slots are target slots
+        for (int i = 0; i < problem.targetValues.length; i++) {
+          _targetSlots.add(
+            TargetSlot(
+              id: i,
+              correctValue: problem.targetValues[i],
+              isTargetSlot: true,
+              currentItem: null,
+            ),
+          );
+        }
+      } else {
+        // For operation problems, only slots with '?' are target slots
+        for (int i = 0; i < problem.targetValues.length; i++) {
+          final isTargetSlot = problem.targetValues[i] == '?';
+          _targetSlots.add(
+            TargetSlot(
+              id: i,
+              correctValue: isTargetSlot ? '' : problem.targetValues[i],
+              isTargetSlot: isTargetSlot,
+              currentItem: null,
+            ),
+          );
+        }
       }
     });
   }
 
+  // 1. First, modify the _checkAnswer method to properly reset when incorrect
   void _checkAnswer() {
     bool allCorrect = true;
 
-    // Check if all target slots have the correct value
-    for (final slot in _targetSlots) {
-      if (slot.isTargetSlot) {
-        final item = slot.currentItem;
-        if (item == null) {
+    // For sequence problems, check all target slots together in order
+    if (_problems[_currentProblemIndex].type == ProblemType.sequence) {
+      final targetValues = _problems[_currentProblemIndex].targetValues;
+
+      // First check if all slots have items
+      for (final slot in _targetSlots) {
+        if (slot.isTargetSlot && slot.currentItem == null) {
           allCorrect = false;
           break;
         }
+      }
 
-        // For sequence problems
-        if (_problems[_currentProblemIndex].type == ProblemType.sequence) {
-          final expectedIndex = _targetSlots.indexOf(slot);
-          final expectedValue =
-              _problems[_currentProblemIndex].targetValues[expectedIndex];
+      // Then check if the numbers are in the correct order
+      if (allCorrect) {
+        // Get all placed values in order
+        final List<String> placedValues =
+            _targetSlots
+                .where((slot) => slot.isTargetSlot)
+                .map((slot) => slot.currentItem!.value)
+                .toList();
 
-          if (item.value != expectedValue) {
+        // Compare with expected values
+        for (int i = 0; i < placedValues.length; i++) {
+          if (placedValues[i] != targetValues[i]) {
             allCorrect = false;
             break;
           }
         }
-        // For operation problems
-        else if (_problems[_currentProblemIndex].type ==
-            ProblemType.operation) {
+      }
+    }
+    // For operation problems (keep existing logic)
+    else if (_problems[_currentProblemIndex].type == ProblemType.operation) {
+      // Check if all target slots have the correct value
+      for (final slot in _targetSlots) {
+        if (slot.isTargetSlot) {
+          final item = slot.currentItem;
+          if (item == null) {
+            allCorrect = false;
+            break;
+          }
+
           final operation = _problems[_currentProblemIndex].targetValues;
           final slotIndex = _targetSlots.indexOf(slot);
 
@@ -459,6 +550,9 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
 
   Future<void> _playFeedbackSound(bool correct) async {
     try {
+      // Reset and reuse the feedback player
+      await _feedbackPlayer.stop();
+
       if (correct) {
         await _feedbackPlayer.setAsset('assets/sounds/correct.mp3');
       } else {
@@ -993,6 +1087,7 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
     );
   }
 
+  // 5. Improve the problem area layout
   Widget _buildProblemArea() {
     if (_showFeedback) {
       return Center(
@@ -1005,7 +1100,7 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
                   _isCorrect
                       ? const Color(0xFF42E682)
                       : const Color(0xFFFF6B6B),
-              size: 100,
+              size: 120, // Larger size (was 100)
             ).animate().scale(
               duration: const Duration(milliseconds: 400),
               curve: Curves.elasticOut,
@@ -1014,7 +1109,7 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
             Text(
               _feedbackMessage,
               style: TextStyle(
-                fontSize: 32,
+                fontSize: 36, // Larger text (was 32)
                 fontWeight: FontWeight.bold,
                 color:
                     _isCorrect
@@ -1047,6 +1142,9 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
     return Center(
       child: Container(
             padding: const EdgeInsets.all(30),
+            margin: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+            ), // Add horizontal margin
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Colors.white, Color(0xFFF5F9FF)],
@@ -1069,7 +1167,9 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
                 children:
                     _targetSlots.map((slot) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10.0,
+                        ), // Increased padding (was 8.0)
                         child: _buildTargetSlot(slot),
                       );
                     }).toList(),
@@ -1086,12 +1186,13 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
     );
   }
 
+  // 3. Improve the target slots with larger drop targets and better visual feedback
   Widget _buildTargetSlot(TargetSlot slot) {
     // If already has an item, show the item
     if (slot.currentItem != null) {
       return Container(
-        width: 70,
-        height: 70,
+        width: 80, // Larger size (was 70)
+        height: 80, // Larger size (was 70)
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF4C6FFF), Color(0xFF6A8CFF)],
@@ -1111,7 +1212,7 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
           child: Text(
             slot.currentItem!.value,
             style: const TextStyle(
-              fontSize: 28,
+              fontSize: 32, // Larger text (was 28)
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -1128,8 +1229,11 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
       return DragTarget<DraggableItem>(
         builder: (context, candidateData, rejectedData) {
           return Container(
-                width: 70,
-                height: 70,
+                width: 80, // Larger size (was 70)
+                height: 80, // Larger size (was 70)
+                margin: const EdgeInsets.all(
+                  8.0,
+                ), // Added margin for easier targeting
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors:
@@ -1148,7 +1252,10 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
                         candidateData.isNotEmpty
                             ? const Color(0xFF4C6FFF)
                             : Colors.grey.shade400,
-                    width: 3,
+                    width:
+                        candidateData.isNotEmpty
+                            ? 4
+                            : 3, // Thicker border when hovered
                     style: BorderStyle.solid,
                   ),
                   boxShadow:
@@ -1157,8 +1264,9 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
                             BoxShadow(
                               color: const Color(
                                 0xFF4C6FFF,
-                              ).withValues(alpha: 0.3),
-                              blurRadius: 12,
+                              ).withValues(alpha: 0.5), // More visible shadow
+                              blurRadius: 16, // Larger blur radius
+                              spreadRadius: 2, // Added spread radius
                               offset: const Offset(0, 6),
                             ),
                           ]
@@ -1171,14 +1279,17 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
                         candidateData.isNotEmpty
                             ? Colors.white
                             : Colors.grey.shade500,
-                    size: 32,
+                    size: 36, // Larger icon (was 32)
                   ),
                 ),
               )
               .animate(target: candidateData.isNotEmpty ? 1 : 0)
               .scale(
                 begin: const Offset(1, 1),
-                end: const Offset(1.1, 1.1),
+                end: const Offset(
+                  1.15,
+                  1.15,
+                ), // More noticeable scaling (was 1.1)
                 duration: const Duration(milliseconds: 200),
               );
         },
@@ -1214,8 +1325,8 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
 
     // Otherwise, just show the value
     return Container(
-      width: 70,
-      height: 70,
+      width: 80, // Larger size (was 70)
+      height: 80, // Larger size (was 70)
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Colors.white, Color(0xFFF5F9FF)],
@@ -1235,7 +1346,7 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
         child: Text(
           slot.correctValue,
           style: const TextStyle(
-            fontSize: 28,
+            fontSize: 32, // Larger text (was 28)
             fontWeight: FontWeight.bold,
             color: Color(0xFF333333),
           ),
@@ -1244,6 +1355,7 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
     );
   }
 
+  // 4. Improve the draggable items as well
   Widget _buildDraggableItems() {
     return ListView(
       scrollDirection: Axis.horizontal,
@@ -1251,18 +1363,21 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
           _draggableItems.map((item) {
             if (item.isPlaced) {
               // If the item is already placed, show an empty space
-              return const SizedBox(width: 80);
+              return const SizedBox(width: 90); // Larger space (was 80)
             }
 
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10.0,
+                vertical: 5.0,
+              ), // Added vertical padding
               child: Draggable<DraggableItem>(
                     data: item,
                     feedback: Material(
                       color: Colors.transparent,
                       child: Container(
-                        width: 70,
-                        height: 70,
+                        width: 80, // Larger size (was 70)
+                        height: 80, // Larger size (was 70)
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFF42E682), Color(0xFF3BD67A)],
@@ -1276,6 +1391,7 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
                                 0xFF42E682,
                               ).withValues(alpha: 0.5),
                               blurRadius: 16,
+                              spreadRadius: 2, // Added spread radius
                               offset: const Offset(0, 8),
                             ),
                           ],
@@ -1284,7 +1400,7 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
                           child: Text(
                             item.value,
                             style: const TextStyle(
-                              fontSize: 28,
+                              fontSize: 32, // Larger text (was 28)
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -1297,8 +1413,8 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
                       HapticFeedback.lightImpact();
                     },
                     childWhenDragging: Container(
-                      width: 70,
-                      height: 70,
+                      width: 80, // Larger size (was 70)
+                      height: 80, // Larger size (was 70)
                       decoration: BoxDecoration(
                         color: Colors.grey.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(16),
@@ -1310,8 +1426,8 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
                       ),
                     ),
                     child: Container(
-                      width: 70,
-                      height: 70,
+                      width: 80, // Larger size (was 70)
+                      height: 80, // Larger size (was 70)
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF42E682), Color(0xFF3BD67A)],
@@ -1333,7 +1449,7 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
                         child: Text(
                           item.value,
                           style: const TextStyle(
-                            fontSize: 28,
+                            fontSize: 32, // Larger text (was 28)
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -1353,38 +1469,76 @@ class _DragDropNumbersChallengeState extends State<DragDropNumbersChallenge>
     );
   }
 
+  // 2. Modify the _buildCheckButton to properly reset when user clicks "Try Again"
   Widget _buildCheckButton() {
     // Check if all target slots have items
     final allSlotsFilled = _targetSlots
         .where((slot) => slot.isTargetSlot)
         .every((slot) => slot.currentItem != null);
 
+    // Determine button text based on feedback state
+    final String buttonText =
+        (_showFeedback && !_isCorrect) ? 'TENTAR NOVAMENTE' : 'VERIFICAR';
+    final IconData buttonIcon =
+        (_showFeedback && !_isCorrect) ? Icons.refresh : Icons.check_circle;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20.0),
       child: ElevatedButton(
             onPressed:
-                allSlotsFilled && _isGameActive && !_showFeedback
-                    ? _checkAnswer
+                _isGameActive &&
+                        (allSlotsFilled || (_showFeedback && !_isCorrect))
+                    ? () {
+                      if (_showFeedback && !_isCorrect) {
+                        // Reset the current problem for a retry
+                        setState(() {
+                          _showFeedback = false;
+
+                          // Reset all draggable items and slots for this problem
+                          for (int i = 0; i < _draggableItems.length; i++) {
+                            _draggableItems[i] = _draggableItems[i].copyWith(
+                              isPlaced: false,
+                            );
+                          }
+
+                          for (int i = 0; i < _targetSlots.length; i++) {
+                            if (_targetSlots[i].isTargetSlot) {
+                              _targetSlots[i] = _targetSlots[i].copyWith(
+                                currentItem: null,
+                              );
+                            }
+                          }
+                        });
+                      } else {
+                        _checkAnswer();
+                      }
+                    }
                     : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF6B6B),
+              backgroundColor:
+                  (_showFeedback && !_isCorrect)
+                      ? const Color(0xFF42E682) // Green for retry
+                      : const Color(0xFFFF6B6B), // Red for check
               foregroundColor: Colors.white,
               minimumSize: const Size(220, 60),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
               elevation: 8,
-              shadowColor: const Color(0xFFFF6B6B).withValues(alpha: 0.5),
+              shadowColor:
+                  (_showFeedback && !_isCorrect)
+                      ? const Color(0xFF42E682).withValues(alpha: 0.5)
+                      : const Color(0xFFFF6B6B).withValues(alpha: 0.5),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.check_circle, size: 28),
+                Icon(buttonIcon, size: 28),
                 const SizedBox(width: 12),
-                const Text(
-                  'VERIFICAR',
-                  style: TextStyle(
+                Text(
+                  buttonText,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
@@ -1441,8 +1595,6 @@ class ParticlePainter extends CustomPainter {
 }
 
 // Data models
-
-enum ProblemType { sequence, operation }
 
 class Problem {
   final ProblemType type;

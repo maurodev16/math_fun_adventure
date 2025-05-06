@@ -4,11 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 
 import '../models/player_model.dart';
+import '../models/game_challenge_models.dart';
+import '../screens/game_map_screen.dart'; // Add this import
 
 class PlayerDataService {
   static const String _playerBoxName = 'playerBox';
   static const String _settingsBoxName = 'settingsBox';
   static const String _playerKey = 'currentPlayer';
+  static const String _gameDataBoxName = 'gameDataBox'; // Add this
 
   // Inicialização do Hive
   static Future<void> initialize() async {
@@ -23,9 +26,16 @@ class PlayerDataService {
     Hive.registerAdapter(LevelAdapter());
     Hive.registerAdapter(AchievementAdapter());
 
+    // Register game challenge adapters
+    Hive.registerAdapter(ProblemTypeAdapter());
+    Hive.registerAdapter(ProblemAdapter());
+    Hive.registerAdapter(DraggableItemAdapter());
+    Hive.registerAdapter(TargetSlotAdapter());
+
     // Abre as boxes que usaremos
     await Hive.openBox<Player>(_playerBoxName);
     await Hive.openBox(_settingsBoxName);
+    await Hive.openBox(_gameDataBoxName); // Add this line
 
     debugPrint('PlayerDataService: Hive inicializado com sucesso');
   }
@@ -64,9 +74,11 @@ class PlayerDataService {
   static Future<void> resetAllData() async {
     final playerBox = Hive.box<Player>(_playerBoxName);
     final settingsBox = Hive.box(_settingsBoxName);
+    final gameDataBox = Hive.box(_gameDataBoxName); // Add this
 
     await playerBox.clear();
     await settingsBox.clear();
+    await gameDataBox.clear(); // Add this
 
     debugPrint('PlayerDataService: Todos os dados foram resetados');
   }
@@ -80,6 +92,17 @@ class PlayerDataService {
   // Carrega uma configuração
   static dynamic getSetting(String key, {dynamic defaultValue}) {
     final box = Hive.box(_settingsBoxName);
+    return box.get(key, defaultValue: defaultValue);
+  }
+
+  // Methods for game challenge data
+  static Future<void> saveGameData(String key, dynamic value) async {
+    final box = Hive.box(_gameDataBoxName);
+    await box.put(key, value);
+  }
+
+  static dynamic getGameData(String key, {dynamic defaultValue}) {
+    final box = Hive.box(_gameDataBoxName);
     return box.get(key, defaultValue: defaultValue);
   }
 
@@ -284,244 +307,5 @@ class PlayerDataService {
       debugPrint('PlayerDataService: Erro ao importar dados - $e');
       return false;
     }
-  }
-}
-
-// Classe para representar a recompensa de login diário
-class LoginReward {
-  final int daysStreak;
-  final int coinsEarned;
-  final bool isSpecialDay;
-
-  LoginReward({
-    required this.daysStreak,
-    required this.coinsEarned,
-    required this.isSpecialDay,
-  });
-}
-
-// Assuming your model classes are in player_model.dart
-// Make sure to adjust the import path if needed
-
-// Player Adapter
-class PlayerAdapter extends TypeAdapter<Player> {
-  @override
-  final int typeId = 0; // Each adapter needs a unique typeId (0-255)
-
-  @override
-  Player read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{};
-
-    for (var i = 0; i < numOfFields; i++) {
-      final fieldNumber = reader.readByte();
-      fields[fieldNumber] = reader.read();
-    }
-
-    return Player(
-        name: fields[0] as String,
-        avatarId: fields[1] as String,
-        lastPlayDate: fields[7] as DateTime? ?? DateTime.now(),
-      )
-      ..coins = fields[2] as int
-      ..totalScore = fields[3] as int
-      ..currentLevel = fields[4] as int
-      ..currentWorld = fields[5] as int
-      ..playTimeSecs = fields[6] as int
-      ..lastPlayDate = fields[7] as DateTime
-      ..consecutiveDays = fields[8] as int
-      ..unlockedItems = (fields[9] as List).cast<String>()
-      ..achievements = (fields[10] as List).cast<Achievement>()
-      ..worlds = (fields[11] as List).cast<World>();
-  }
-
-  @override
-  void write(BinaryWriter writer, Player obj) {
-    writer.writeByte(12);
-    writer.writeByte(0);
-    writer.write(obj.name);
-    writer.writeByte(1);
-    writer.write(obj.avatarId);
-    writer.writeByte(2);
-    writer.write(obj.coins);
-    writer.writeByte(3);
-    writer.write(obj.totalScore);
-    writer.writeByte(4);
-    writer.write(obj.currentLevel);
-    writer.writeByte(5);
-    writer.write(obj.currentWorld);
-    writer.writeByte(6);
-    writer.write(obj.playTimeSecs);
-    writer.writeByte(7);
-    writer.write(obj.lastPlayDate);
-    writer.writeByte(8);
-    writer.write(obj.consecutiveDays);
-    writer.writeByte(9);
-    writer.write(obj.unlockedItems);
-    writer.writeByte(10);
-    writer.write(obj.achievements);
-    writer.writeByte(11);
-    writer.write(obj.worlds);
-  }
-}
-
-// World Adapter
-class WorldAdapter extends TypeAdapter<World> {
-  @override
-  final int typeId = 1;
-
-  @override
-  World read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{};
-
-    for (var i = 0; i < numOfFields; i++) {
-      final fieldNumber = reader.readByte();
-      fields[fieldNumber] = reader.read();
-    }
-
-    // Trate campos que podem estar faltando
-    final world = World(
-      id: fields[0] as int,
-      name: fields[1] as String,
-      description: fields[7] != null ? fields[7] as String : "",
-      iconId: fields[8] != null ? fields[8] as String : "default_icon",
-      themeColor: fields[9] != null ? fields[9] as String : "#4C6FFF",
-      operation: fields[10] != null ? fields[10] as String : "addition",
-      levels: fields[4] != null ? (fields[4] as List).cast<Level>() : [],
-    );
-
-    // Configure propriedades adicionais
-    world.unlocked = fields[2] as bool;
-    world.completed = fields[3] as bool;
-
-    return world;
-  }
-
-  @override
-  void write(BinaryWriter writer, World obj) {
-    writer.writeByte(11); // Atualize para o número total de campos
-
-    // Campos básicos primeiro
-    writer.writeByte(0);
-    writer.write(obj.id);
-    writer.writeByte(1);
-    writer.write(obj.name);
-    writer.writeByte(2);
-    writer.write(obj.unlocked);
-    writer.writeByte(3);
-    writer.write(obj.completed);
-    writer.writeByte(4);
-    writer.write(obj.levels);
-
-    // Campos adicionais
-    writer.writeByte(7);
-    writer.write(obj.description);
-    writer.writeByte(8);
-    writer.write(obj.iconId);
-    writer.writeByte(9);
-    writer.write(obj.themeColor);
-    writer.writeByte(10);
-    writer.write(obj.operation);
-  }
-}
-
-// Level Adapter
-// Level Adapter
-class LevelAdapter extends TypeAdapter<Level> {
-  @override
-  final int typeId = 2;
-
-  @override
-  Level read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{};
-
-    for (var i = 0; i < numOfFields; i++) {
-      final fieldNumber = reader.readByte();
-      fields[fieldNumber] = reader.read();
-    }
-
-    return Level(
-        id: fields[0] as int,
-        name: fields[1] as String,
-        // Use um valor padrão ou operador de coalescência nula (??)
-        difficulty: fields[7] != null ? fields[7] as int : 1, // Valor padrão 1
-        challengeType:
-            fields[8] != null
-                ? fields[8] as String
-                : 'normal', // Valor padrão 'normal'
-      )
-      ..stars = fields[2] as int
-      ..completed = fields[3] as bool
-      ..unlocked = fields[4] as bool
-      ..highScore = fields[5] as int
-      ..bestTime = fields[6] as int;
-  }
-
-  @override
-  void write(BinaryWriter writer, Level obj) {
-    writer.writeByte(9); // Atualize para incluir todos os campos
-    writer.writeByte(0);
-    writer.write(obj.id);
-    writer.writeByte(1);
-    writer.write(obj.name);
-    writer.writeByte(2);
-    writer.write(obj.stars);
-    writer.writeByte(3);
-    writer.write(obj.completed);
-    writer.writeByte(4);
-    writer.write(obj.unlocked);
-    writer.writeByte(5);
-    writer.write(obj.highScore);
-    writer.writeByte(6);
-    writer.write(obj.bestTime);
-    writer.writeByte(7);
-    writer.write(obj.difficulty);
-    writer.writeByte(8);
-    writer.write(obj.challengeType);
-  }
-}
-
-// Achievement Adapter
-class AchievementAdapter extends TypeAdapter<Achievement> {
-  @override
-  final int typeId = 3;
-
-  @override
-  Achievement read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{};
-
-    for (var i = 0; i < numOfFields; i++) {
-      final fieldNumber = reader.readByte();
-      fields[fieldNumber] = reader.read();
-    }
-
-    return Achievement(
-      id: fields[0],
-      title: fields[1] as String,
-      description: fields[2] as String,
-      iconId: fields[5] as String,
-      dateUnlocked: fields[4] as DateTime,
-      rewardCoins: fields[6] as int,
-    )..dateUnlocked = fields[3] as DateTime;
-  }
-
-  @override
-  void write(BinaryWriter writer, Achievement obj) {
-    writer.writeByte(7);
-    writer.writeByte(0);
-    writer.write(obj.id);
-    writer.writeByte(1);
-    writer.write(obj.title);
-    writer.writeByte(2);
-    writer.write(obj.description);
-    writer.writeByte(3);
-    writer.write(obj.dateUnlocked);
-    writer.writeByte(4);
-    writer.write(obj.iconId);
-    writer.writeByte(5);
-    writer.write(obj.rewardCoins);
   }
 }
