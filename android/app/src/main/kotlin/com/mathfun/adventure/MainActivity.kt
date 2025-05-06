@@ -1,4 +1,4 @@
-package com.math_fun_adventure
+package com.mathfun.adventure
 
 import io.flutter.embedding.android.FlutterActivity
 
